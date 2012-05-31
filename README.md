@@ -5,6 +5,10 @@ Tomcat Redis Session is an implementation of
 [Tomcat Manager Component](http://tomcat.apache.org/tomcat-7.0-doc/config/manager.html)
 using [Redis](http://redis.io/) key-value store.
 
+## Example
+
+[Embedded example](https://github.com/zinin/tomcat-redis-session-example)
+
 ## Contacts
 
 If you have questions you can [mail me](mailto:mail@zinin.ru)
