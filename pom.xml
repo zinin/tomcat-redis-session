@@ -6,7 +6,7 @@
     <artifactId>tomcat-redis-session</artifactId>
     <packaging>jar</packaging>
     <name>Redis HttpSession for Tomcat</name>
-    <version>0.3-SNAPSHOT</version>
+    <version>0.3</version>
     <description>Redis HttpSession Implementation for Tomcat</description>
     <url>https://github.com/zinin/tomcat-redis-session</url>
 
