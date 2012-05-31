@@ -1,12 +1,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
     <modelVersion>4.0.0</modelVersion>
     <groupId>ru.zinin</groupId>
     <artifactId>tomcat-redis-session</artifactId>
     <packaging>jar</packaging>
     <name>Redis HttpSession for Tomcat</name>
-    <version>0.3</version>
+    <version>0.4-SNAPSHOT</version>
     <description>Redis HttpSession Implementation for Tomcat</description>
     <url>https://github.com/zinin/tomcat-redis-session</url>
 
@@ -19,9 +25,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:https://github.com/zinin/tomcat-redis-session.git</connection>
-        <developerConnection>scm:git:https://github.com/zinin/tomcat-redis-session.git</developerConnection>
-        <url>https://github.com/zinin/tomcat-redis-session</url>
+        <connection>scm:git:git@github.com:zinin/tomcat-redis-session.git</connection>
+        <developerConnection>scm:git:git@github.com:zinin/tomcat-redis-session.git</developerConnection>
+        <url>git@github.com:zinin/tomcat-redis-session.git</url>
     </scm>
 
     <issueManagement>
@@ -127,6 +133,21 @@
                         <phase>compile</phase>
                         <goals>
                             <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.4</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
                         </goals>
                     </execution>
                 </executions>
