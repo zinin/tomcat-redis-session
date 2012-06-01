@@ -43,14 +43,6 @@
         </developer>
     </developers>
 
-    <distributionManagement>
-        <repository>
-            <id>maven.zinin.ru</id>
-            <name>maven.zinin.ru</name>
-            <url>http://maven.zinin.ru/content/repositories/tomcat-redis-session/</url>
-        </repository>
-    </distributionManagement>
-
     <properties>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <tomcat.version>7.0.27</tomcat.version>
@@ -94,13 +86,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>2.4.1</version>
+                <version>2.5</version>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.4</version>
+                <version>2.5</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
