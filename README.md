@@ -52,6 +52,7 @@ Use it:
 ## Contacts
 
 If you have questions you can [mail me](mailto:mail@zinin.ru)
+
 [Bug tracker](https://github.com/zinin/tomcat-redis-session/issues?state=open)
 
 ## License
