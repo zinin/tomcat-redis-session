@@ -25,9 +25,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git@github.com:zinin/tomcat-redis-session.git</connection>
-        <developerConnection>scm:git:git@github.com:zinin/tomcat-redis-session.git</developerConnection>
-        <url>scm:git:git@github.com:zinin/tomcat-redis-session.git</url>
+        <connection>scm:git|ssh://git@github.com/zinin/tomcat-redis-session.git</connection>
+        <developerConnection>scm:git|ssh://git@github.com/zinin/tomcat-redis-session.git</developerConnection>
+        <url>scm:git|ssh://git@github.com/zinin/tomcat-redis-session.git</url>
         <tag>HEAD</tag>
     </scm>
 
