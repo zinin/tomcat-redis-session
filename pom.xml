@@ -27,7 +27,7 @@
     <scm>
         <connection>scm:git:git@github.com:zinin/tomcat-redis-session.git</connection>
         <developerConnection>scm:git:git@github.com:zinin/tomcat-redis-session.git</developerConnection>
-        <url>git@github.com:zinin/tomcat-redis-session.git</url>
+        <url>scm:git:git@github.com:zinin/tomcat-redis-session.git</url>
         <tag>HEAD</tag>
     </scm>
 
