@@ -55,6 +55,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
     private JedisPool pool;
     private ServletContext servletContext;
     private int dbIndex = 0;
+    private boolean disableListeners = false;
 
     private String authType;
     private Principal principal;
@@ -71,13 +72,14 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         setManager(manager);
     }
 
-    RedisHttpSession(String id, JedisPool pool, ServletContext servletContext, int dbIndex) {
+    RedisHttpSession(String id, JedisPool pool, ServletContext servletContext, int dbIndex, boolean disableListeners) {
         log.trace("Create session [OLD] from RedisSessionTemplate.");
 
         this.id = id;
         this.pool = pool;
         this.servletContext = servletContext;
         this.dbIndex = dbIndex;
+        this.disableListeners = disableListeners;
     }
 
     RedisHttpSession(String id, RedisManager manager, int maxInactiveInterval) {
@@ -131,7 +133,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
     }
 
     public void tellNew() {
-        if (!manager.isDisableListeners()) {
+        if (!disableListeners) {
             Jedis jedis = pool.getResource();
             try {
                 jedis.select(dbIndex);
@@ -366,6 +368,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         this.pool = this.manager.getPool();
         this.servletContext = ((Context) manager.getContainer()).getServletContext();
         this.dbIndex = this.manager.getDbIndex();
+        this.disableListeners = this.manager.isDisableListeners();
     }
 
     @Override
@@ -549,7 +552,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
                 transaction.del(keys.toArray(new String[]{}));
             }
 
-            if (!manager.isDisableListeners()) {
+            if (!disableListeners) {
                 RedisSessionEvent redisSessionEvent = new RedisSessionDestroyedEvent(id);
                 byte[] bytes = RedisSerializationUtil.encode(redisSessionEvent);
                 String message = new String(Base64Util.encode(bytes));
@@ -754,7 +757,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         }
 
         byte[] bytes = null;
-        if (exist && !manager.isDisableListeners()) {
+        if (exist && !disableListeners) {
             jedis = pool.getResource();
             try {
                 bytes = jedis.get(attributeKey.getBytes(RedisSessionKeys.getEncoding()));
@@ -785,7 +788,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
             throw new RuntimeException(e);
         }
 
-        if (!manager.isDisableListeners()) {
+        if (!disableListeners) {
             RedisSessionEvent sessionEvent;
             if (bytes == null) {
                 sessionEvent = new RedisSessionAddAttributeEvent(id, name, (Serializable) value);
@@ -842,7 +845,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         }
 
         String message = null;
-        if (!manager.isDisableListeners()) {
+        if (!disableListeners) {
             byte[] bytes;
 
             jedis = pool.getResource();
@@ -870,7 +873,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
 
             transaction.srem(attrsListKey, name);
 
-            if (!manager.isDisableListeners()) {
+            if (!disableListeners) {
                 transaction.publish(RedisSessionKeys.getSessionChannel(), message);
             }
 
