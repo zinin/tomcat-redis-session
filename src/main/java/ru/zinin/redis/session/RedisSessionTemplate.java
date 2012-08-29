@@ -16,6 +16,7 @@ public class RedisSessionTemplate {
     private JedisPool jedisPool;
     private ServletContext servletContext;
     private int dbIndex = 0;
+    private boolean disableListeners = false;
 
     public RedisSessionTemplate() {
     }
@@ -49,6 +50,14 @@ public class RedisSessionTemplate {
         this.dbIndex = dbIndex;
     }
 
+    public boolean isDisableListeners() {
+        return disableListeners;
+    }
+
+    public void setDisableListeners(boolean disableListeners) {
+        this.disableListeners = disableListeners;
+    }
+
     private void verifyInitialization() {
         if (jedisPool == null) {
             throw new IllegalStateException("JedisPool is not initialized");
@@ -75,7 +84,7 @@ public class RedisSessionTemplate {
 
         Set<RedisHttpSession> result = new HashSet<RedisHttpSession>(sessionIds.size());
         for (String sessionId : sessionIds) {
-            RedisHttpSession session = new RedisHttpSession(sessionId, jedisPool, servletContext, dbIndex);
+            RedisHttpSession session = new RedisHttpSession(sessionId, jedisPool, servletContext, dbIndex, disableListeners);
             if (session.isValid()) {
                 result.add(session);
             }
@@ -87,6 +96,6 @@ public class RedisSessionTemplate {
     public RedisHttpSession getSession(String id) {
         verifyInitialization();
 
-        return new RedisHttpSession(id, jedisPool, servletContext, dbIndex);
+        return new RedisHttpSession(id, jedisPool, servletContext, dbIndex, disableListeners);
     }
 }
