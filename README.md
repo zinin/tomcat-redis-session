@@ -5,6 +5,9 @@ Tomcat Redis Session is an implementation of
 [Tomcat Manager Component](http://tomcat.apache.org/tomcat-7.0-doc/config/manager.html)
 using [Redis](http://redis.io/) key-value store.
 
+** Warning: last version(0.6) is not working with latest spring-data-redis version(1.1.0 at this time).
+So if you're using spring-data-redis you have to use version 0.5. It' the same with the exception of version Jedis. **
+
 ## Standalone configuration
 
 First you must download the following dependencies:
@@ -36,7 +39,7 @@ Add tomcat-redis-session as maven dependency:
     <dependency>
         <groupId>ru.zinin</groupId>
         <artifactId>tomcat-redis-session</artifactId>
-        <version>0.4</version>
+        <version>0.5</version>
     </dependency>
 ```
 
