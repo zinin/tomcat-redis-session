@@ -106,7 +106,6 @@ public class RedisEventListenerThread implements Runnable {
         while (!stopFlag.get()) {
             Jedis jedis = manager.getPool().getResource();
             try {
-                jedis.select(manager.getDbIndex());
                 log.debug("Subscribed to " + RedisSessionKeys.getSessionChannel());
                 jedis.subscribe(pubSub, RedisSessionKeys.getSessionChannel());
                 log.debug("Done.");
