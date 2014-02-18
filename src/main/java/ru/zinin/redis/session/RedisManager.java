@@ -203,7 +203,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         Long result;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             result = jedis.zcard(key);
             pool.returnResource(jedis);
         } catch (Throwable e) {
@@ -325,7 +324,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         String lastAccessTime;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             lastAccessTime = jedis.get(key);
             pool.returnResource(jedis);
         } catch (Throwable e) {
@@ -348,7 +346,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
 
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             sessionIds = jedis.zrangeByScore(RedisSessionKeys.getSessionsKey(), 0, Double.MAX_VALUE);
 
             pool.returnResource(jedis);
@@ -407,7 +404,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
 
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             sessionIds = jedis.zrangeByScore(RedisSessionKeys.getSessionsKey(), 0, max);
 
             pool.returnResource(jedis);
@@ -569,7 +565,7 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         if (pool == null) {
             GenericObjectPool.Config config = new GenericObjectPool.Config();
             config.testOnBorrow = true;
-            pool = new JedisPool(config, redisHostname, redisPort, redisTimeout, redisPassword);
+            pool = new JedisPool(config, redisHostname, redisPort, redisTimeout, redisPassword, dbIndex);
         }
 
         if (!disableListeners) {
