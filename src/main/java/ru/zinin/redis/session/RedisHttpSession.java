@@ -297,7 +297,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         return info;
     }
 
-    private Long getLastAceessTime() {
+    private Long getLastAccessTime() {
         String key = RedisSessionKeys.getLastAccessTimeKey(id);
 
         String lastAccessTime;
@@ -337,7 +337,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
     public long getLastAccessedTime() {
         log.trace("EXEC getLastAccessedTime();");
 
-        Long lastAccessTime = getLastAceessTime();
+        Long lastAccessTime = getLastAccessTime();
 
         if (lastAccessTime == null) {
             throw new IllegalStateException("Can't get last access time from redis.");
@@ -440,9 +440,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
     public boolean isValid() {
         log.trace("EXEC isValid();");
 
-        Long lastAccessTime = getLastAceessTime();
-
-        return lastAccessTime != null;
+        return !isAnyRequiredFieldNull();
     }
 
     private void renewAll() {
@@ -905,5 +903,17 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         log.trace("EXEC isNew();");
 
         return isNew.get();
+    }
+
+    private boolean isAnyRequiredFieldNull() {
+        try {
+            getLastAccessedTime();
+            getExpireAt();
+            getMaxInactiveInterval();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+
+        return false;
     }
 }
