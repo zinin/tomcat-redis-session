@@ -10,7 +10,7 @@
     <artifactId>tomcat-redis-session</artifactId>
     <packaging>jar</packaging>
     <name>Redis HttpSession for Tomcat</name>
-    <version>0.7-SNAPSHOT</version>
+    <version>0.7</version>
     <description>Redis HttpSession Implementation for Tomcat</description>
     <url>https://github.com/zinin/tomcat-redis-session</url>
 
@@ -26,7 +26,7 @@
         <connection>scm:git|ssh://git@github.com/zinin/tomcat-redis-session.git</connection>
         <developerConnection>scm:git|ssh://git@github.com/zinin/tomcat-redis-session.git</developerConnection>
         <url>scm:git|ssh://git@github.com/zinin/tomcat-redis-session.git</url>
-        <tag>HEAD</tag>
+        <tag>tomcat-redis-session-0.7</tag>
     </scm>
 
     <issueManagement>
