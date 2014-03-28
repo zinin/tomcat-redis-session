@@ -54,7 +54,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
     private RedisManager manager;
     private JedisPool pool;
     private ServletContext servletContext;
-    private int dbIndex = 0;
     private boolean disableListeners = false;
 
     private String authType;
@@ -72,13 +71,12 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         setManager(manager);
     }
 
-    RedisHttpSession(String id, JedisPool pool, ServletContext servletContext, int dbIndex, boolean disableListeners) {
+    RedisHttpSession(String id, JedisPool pool, ServletContext servletContext, boolean disableListeners) {
         log.trace("Create session [OLD] from RedisSessionTemplate.");
 
         this.id = id;
         this.pool = pool;
         this.servletContext = servletContext;
-        this.dbIndex = dbIndex;
         this.disableListeners = disableListeners;
     }
 
@@ -102,7 +100,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
 
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             Transaction transaction = jedis.multi();
 
             transaction.set(creationTimeKey, Long.toString(currentTime));
@@ -136,7 +133,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         if (!disableListeners) {
             Jedis jedis = pool.getResource();
             try {
-                jedis.select(dbIndex);
                 RedisSessionEvent redisSessionEvent = new RedisSessionCreatedEvent(id);
                 byte[] bytes = RedisSerializationUtil.encode(redisSessionEvent);
                 String message = new String(Base64Util.encode(bytes));
@@ -179,7 +175,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         String creationTime;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             creationTime = jedis.get(key);
 
             pool.returnResource(jedis);
@@ -252,7 +247,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
 
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             Transaction transaction = jedis.multi();
 
             transaction.rename(oldCreationTimeKey, newCreationTimeKey);
@@ -297,13 +291,12 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         return info;
     }
 
-    private Long getLastAceessTime() {
+    private Long getLastAccessTime() {
         String key = RedisSessionKeys.getLastAccessTimeKey(id);
 
         String lastAccessTime;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             lastAccessTime = jedis.get(key);
 
             pool.returnResource(jedis);
@@ -337,7 +330,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
     public long getLastAccessedTime() {
         log.trace("EXEC getLastAccessedTime();");
 
-        Long lastAccessTime = getLastAceessTime();
+        Long lastAccessTime = getLastAccessTime();
 
         if (lastAccessTime == null) {
             throw new IllegalStateException("Can't get last access time from redis.");
@@ -367,7 +360,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         this.manager = (RedisManager) manager;
         this.pool = this.manager.getPool();
         this.servletContext = ((Context) manager.getContainer()).getServletContext();
-        this.dbIndex = this.manager.getDbIndex();
         this.disableListeners = this.manager.isDisableListeners();
     }
 
@@ -386,7 +378,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
 
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             jedis.set(key, Integer.toString(interval));
 
             pool.returnResource(jedis);
@@ -440,9 +431,19 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
     public boolean isValid() {
         log.trace("EXEC isValid();");
 
-        Long lastAccessTime = getLastAceessTime();
+        return !isAnyRequiredFieldNull();
+    }
 
-        return lastAccessTime != null;
+    private boolean isAnyRequiredFieldNull() {
+        try {
+            getLastAccessedTime();
+            getExpireAt();
+            getMaxInactiveInterval();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+
+        return false;
     }
 
     private void renewAll() {
@@ -467,7 +468,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
 
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             Transaction transaction = jedis.multi();
 
             if (currentExpireAtTime < expireAtTime) {
@@ -536,7 +536,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
 
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             Transaction transaction = jedis.multi();
 
             transaction.del(creationTimeKey, lastAccessTimeKey, expiresAtKey, timeoutKey, attrsKey);
@@ -620,7 +619,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         String sessionTimeout;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             sessionTimeout = jedis.get(key);
 
             pool.returnResource(jedis);
@@ -653,7 +651,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         byte[] object;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             object = jedis.get(key.getBytes(RedisSessionKeys.getEncoding()));
 
             pool.returnResource(jedis);
@@ -682,7 +679,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         Set<String> result;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             result = jedis.smembers(key);
 
             pool.returnResource(jedis);
@@ -704,7 +700,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         String expireAt;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             expireAt = jedis.get(key);
 
             pool.returnResource(jedis);
@@ -747,7 +742,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         boolean exist;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             exist = jedis.exists(attributeKey);
 
             pool.returnResource(jedis);
@@ -831,7 +825,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         boolean exist;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             exist = jedis.exists(attributeKey);
 
             pool.returnResource(jedis);

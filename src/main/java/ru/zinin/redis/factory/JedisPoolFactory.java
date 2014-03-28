@@ -36,8 +36,8 @@ import java.util.Hashtable;
  * <li>host - redis server hostname, "localhost" by default</li>
  * <li>port - redis server port, {@link redis.clients.jedis.Protocol#DEFAULT_PORT} by default</li>
  * <li>timeout - connection timeout in ms, {@link redis.clients.jedis.Protocol#DEFAULT_TIMEOUT} by default</li>
+ * <li>database - connection timeout in ms, {@link redis.clients.jedis.Protocol#DEFAULT_DATABASE} by default</li>
  * <li>password - redis server password</li>
- * <li>max-active - {@link org.apache.commons.pool.impl.GenericObjectPool.Config#maxActive}, if not set default value used</li>
  * </ul>
  * <p/>
  * <p>Date: 30.10.11 22:15</p>
@@ -61,6 +61,7 @@ public class JedisPoolFactory implements ObjectFactory {
         String host = "localhost";
         int port = Protocol.DEFAULT_PORT;
         int timeout = Protocol.DEFAULT_TIMEOUT;
+        int database = Protocol.DEFAULT_DATABASE;
         String password = null;
 
         RefAddr hostRefAddr = ref.get("host");
@@ -75,6 +76,10 @@ public class JedisPoolFactory implements ObjectFactory {
         if (timeoutRefAddr != null) {
             timeout = Integer.parseInt(timeoutRefAddr.getContent().toString());
         }
+        RefAddr databaseRefAddr = ref.get("database");
+        if (databaseRefAddr != null) {
+            database = Integer.parseInt(databaseRefAddr.getContent().toString());
+        }
         RefAddr passwordRefAddr = ref.get("password");
         if (passwordRefAddr != null) {
             password = passwordRefAddr.getContent().toString();
@@ -87,13 +92,6 @@ public class JedisPoolFactory implements ObjectFactory {
         log.trace("Password: " + password);
 
         JedisPoolConfig config = new JedisPoolConfig();
-        RefAddr maxActiveRefAddr = ref.get("max-active");
-        if (maxActiveRefAddr != null) {
-            int maxActive = Integer.parseInt(maxActiveRefAddr.getContent().toString());
-            log.debug("Setting maxActive to " + maxActive);
-            config.maxActive = maxActive;
-        }
-
-        return new JedisPool(config, host, port, timeout, password);
+        return new JedisPool(config, host, port, timeout, password, database);
     }
 }

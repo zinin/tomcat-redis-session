@@ -21,12 +21,12 @@ import org.apache.catalina.mbeans.MBeanUtils;
 import org.apache.catalina.session.Constants;
 import org.apache.catalina.util.LifecycleMBeanBase;
 import org.apache.catalina.util.SessionIdGenerator;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Protocol;
 
 import javax.naming.InitialContext;
@@ -70,7 +70,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
     private JedisPool pool;
 
     private boolean disableListeners = false;
-    private int dbIndex = 0;
 
     private PropertyChangeSupport support = new PropertyChangeSupport(this);
 
@@ -203,7 +202,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         Long result;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             result = jedis.zcard(key);
             pool.returnResource(jedis);
         } catch (Throwable e) {
@@ -325,7 +323,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         String lastAccessTime;
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             lastAccessTime = jedis.get(key);
             pool.returnResource(jedis);
         } catch (Throwable e) {
@@ -348,7 +345,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
 
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             sessionIds = jedis.zrangeByScore(RedisSessionKeys.getSessionsKey(), 0, Double.MAX_VALUE);
 
             pool.returnResource(jedis);
@@ -407,7 +403,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
 
         Jedis jedis = pool.getResource();
         try {
-            jedis.select(dbIndex);
             sessionIds = jedis.zrangeByScore(RedisSessionKeys.getSessionsKey(), 0, max);
 
             pool.returnResource(jedis);
@@ -527,14 +522,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         this.disableListeners = disableListeners;
     }
 
-    public int getDbIndex() {
-        return dbIndex;
-    }
-
-    public void setDbIndex(int dbIndex) {
-        this.dbIndex = dbIndex;
-    }
-
     @Override
     protected void startInternal() throws LifecycleException {
         log.trace("EXEC startInternal();");
@@ -567,8 +554,7 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         log.debug("Pool from JNDI: " + pool);
 
         if (pool == null) {
-            GenericObjectPool.Config config = new GenericObjectPool.Config();
-            config.testOnBorrow = true;
+            JedisPoolConfig config = new JedisPoolConfig();
             pool = new JedisPool(config, redisHostname, redisPort, redisTimeout, redisPassword);
         }
 

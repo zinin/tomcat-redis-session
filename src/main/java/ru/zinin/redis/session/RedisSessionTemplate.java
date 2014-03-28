@@ -15,7 +15,6 @@ import java.util.Set;
 public class RedisSessionTemplate {
     private JedisPool jedisPool;
     private ServletContext servletContext;
-    private int dbIndex = 0;
     private boolean disableListeners = false;
 
     public RedisSessionTemplate() {
@@ -40,14 +39,6 @@ public class RedisSessionTemplate {
 
     public void setServletContext(ServletContext servletContext) {
         this.servletContext = servletContext;
-    }
-
-    public int getDbIndex() {
-        return dbIndex;
-    }
-
-    public void setDbIndex(int dbIndex) {
-        this.dbIndex = dbIndex;
     }
 
     public boolean isDisableListeners() {
@@ -84,7 +75,7 @@ public class RedisSessionTemplate {
 
         Set<RedisHttpSession> result = new HashSet<RedisHttpSession>(sessionIds.size());
         for (String sessionId : sessionIds) {
-            RedisHttpSession session = new RedisHttpSession(sessionId, jedisPool, servletContext, dbIndex, disableListeners);
+            RedisHttpSession session = new RedisHttpSession(sessionId, jedisPool, servletContext, disableListeners);
             if (session.isValid()) {
                 result.add(session);
             }
@@ -96,6 +87,6 @@ public class RedisSessionTemplate {
     public RedisHttpSession getSession(String id) {
         verifyInitialization();
 
-        return new RedisHttpSession(id, jedisPool, servletContext, dbIndex, disableListeners);
+        return new RedisHttpSession(id, jedisPool, servletContext, disableListeners);
     }
 }
