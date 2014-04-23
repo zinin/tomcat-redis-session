@@ -54,7 +54,7 @@ public class RedisEventListenerThread implements Runnable {
         public void onMessage(String channel, String message) {
             byte[] bytes = Base64Util.decode(message);
 
-            RedisSessionEvent event = RedisSerializationUtil.decode(bytes);
+            RedisSessionEvent event = RedisSerializationUtil.decode(bytes, manager.getContainerClassLoader());
 
             log.debug("Event from " + channel + ": " + event);
 
