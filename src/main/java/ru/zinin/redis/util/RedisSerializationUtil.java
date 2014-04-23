@@ -42,7 +42,7 @@ public class RedisSerializationUtil {
 
     @SuppressWarnings({"unchecked", "ThrowFromFinallyBlock"})
     public static <T extends Serializable> T decode(byte[] bytes, ClassLoader classLoader) {
-        if (classLoader != null) {
+        if (classLoader == null) {
             classLoader = Thread.currentThread().getContextClassLoader();
         }
         T t = null;
