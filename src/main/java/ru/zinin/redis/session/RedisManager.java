@@ -47,6 +47,7 @@ import java.util.concurrent.Executors;
 public class RedisManager extends ManagerBase implements Manager, PropertyChangeListener {
     private final Log log = LogFactory.getLog(RedisManager.class);
 
+    private static final String info = "RedisManager/1.0";
     private static final StringManager sm = StringManager.getManager(Constants.Package);
 
     private int maxInactiveInterval = 30 * 60;
@@ -73,6 +74,11 @@ public class RedisManager extends ManagerBase implements Manager, PropertyChange
     private final RedisEventListenerThread eventListenerThread = new RedisEventListenerThread(this);
 
     @Override
+    public String getName() {
+      return info;
+    }
+
+    @Override
     public boolean getDistributable() {
         log.trace("EXEC getDistributable();");
 
@@ -86,22 +92,6 @@ public class RedisManager extends ManagerBase implements Manager, PropertyChange
         if (!distributable) {
             log.error("Only distributable web applications supported.");
         }
-    }
-
-    @Override
-    public int getMaxInactiveInterval() {
-        log.trace("EXEC getMaxInactiveInterval();");
-
-        return maxInactiveInterval;
-    }
-
-    @Override
-    public void setMaxInactiveInterval(int interval) {
-        log.trace(String.format("EXEC setMaxInactiveInterval(%d);", interval));
-
-        int oldMaxInactiveInterval = this.maxInactiveInterval;
-        this.maxInactiveInterval = interval;
-        support.firePropertyChange("maxInactiveInterval", Integer.valueOf(oldMaxInactiveInterval), Integer.valueOf(this.maxInactiveInterval));
     }
 
     @Override
@@ -219,13 +209,6 @@ public class RedisManager extends ManagerBase implements Manager, PropertyChange
     }
 
     @Override
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        log.trace(String.format("EXEC addPropertyChangeListener(%s);", listener));
-
-        support.addPropertyChangeListener(listener);
-    }
-
-    @Override
     public Session createEmptySession() {
         log.trace("EXEC createEmptySession();");
 
@@ -318,13 +301,6 @@ public class RedisManager extends ManagerBase implements Manager, PropertyChange
     @Override
     public void remove(Session session, boolean update) {
         log.trace(String.format("EXEC remove(%s, %s);", session, update));
-    }
-
-    @Override
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        log.trace(String.format("EXEC removePropertyChangeListener(%s);", listener));
-
-        support.removePropertyChangeListener(listener);
     }
 
     @Override
@@ -490,32 +466,6 @@ public class RedisManager extends ManagerBase implements Manager, PropertyChange
         setState(LifecycleState.STARTING);
     }
 
-    public String getSecureRandomClass() {
-        return this.secureRandomClass;
-    }
-
-    public void setSecureRandomClass(String secureRandomClass) {
-        String oldSecureRandomClass = this.secureRandomClass;
-        this.secureRandomClass = secureRandomClass;
-        support.firePropertyChange("secureRandomClass", oldSecureRandomClass, this.secureRandomClass);
-    }
-
-    public String getSecureRandomAlgorithm() {
-        return secureRandomAlgorithm;
-    }
-
-    public void setSecureRandomAlgorithm(String secureRandomAlgorithm) {
-        this.secureRandomAlgorithm = secureRandomAlgorithm;
-    }
-
-    public String getSecureRandomProvider() {
-        return secureRandomProvider;
-    }
-
-    public void setSecureRandomProvider(String secureRandomProvider) {
-        this.secureRandomProvider = secureRandomProvider;
-    }
-
     @Override
     protected void stopInternal() throws LifecycleException {
         log.trace("EXEC stopInternal();");
@@ -543,22 +493,5 @@ public class RedisManager extends ManagerBase implements Manager, PropertyChange
         }
 
         return result;
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-        log.trace(String.format("EXEC propertyChange(%s);", event));
-
-        if (!(event.getSource() instanceof Context)) {
-            return;
-        }
-
-        if (event.getPropertyName().equals("sessionTimeout")) {
-            try {
-                setMaxInactiveInterval((Integer) event.getNewValue() * 60);
-            } catch (NumberFormatException e) {
-                log.error(sm.getString("managerBase.sessionTimeout", event.getNewValue()));
-            }
-        }
     }
 }
