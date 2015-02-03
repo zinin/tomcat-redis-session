@@ -20,7 +20,6 @@ import org.apache.catalina.Context;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
 import org.apache.catalina.SessionListener;
-import org.apache.catalina.util.Enumerator;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import redis.clients.jedis.Jedis;
@@ -33,6 +32,8 @@ import ru.zinin.redis.util.RedisSerializationUtil;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionIdListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.security.Principal;
@@ -46,8 +47,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class RedisHttpSession implements HttpSession, Session, Serializable {
     private final Log log = LogFactory.getLog(RedisHttpSession.class);
-
-    private static final String info = "RedisSession/1.0";
 
     private String id;
 
@@ -284,13 +283,6 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         }
     }
 
-    @Override
-    public String getInfo() {
-        log.trace("EXEC getInfo();");
-
-        return info;
-    }
-
     private Long getLastAccessTime() {
         String key = RedisSessionKeys.getLastAccessTimeKey(id);
 
@@ -344,6 +336,18 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
         log.trace("EXEC getLastAccessedTimeInternal();");
 
         return getLastAccessedTime();
+    }
+
+    @Override
+    public long getIdleTime() {
+        log.trace("EXEC getIdleTime();");
+        return getIdleTimeInternal();
+    }
+
+    @Override
+    public long getIdleTimeInternal() {
+        log.trace("EXEC getIdleTimeInternal();");
+        return System.currentTimeMillis() - getLastAccessedTimeInternal();
     }
 
     @Override
@@ -611,6 +615,38 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
     }
 
     @Override
+    public void tellChangedSessionId(String newId, String oldId, boolean notifySessionListeners, boolean notifyContainerListeners) {
+      log.trace(String.format("EXEC tellChangedSessionId(%s, %s, %b, %b);", newId, oldId, notifyContainerListeners, notifyContainerListeners));
+
+      Context context = manager.getContext();
+      // notify ContainerListeners
+      if (notifyContainerListeners) {
+        context.fireContainerEvent(Context.CHANGE_SESSION_ID_EVENT,
+            new String[]{oldId, newId});
+      }
+
+      // notify HttpSessionIdListener
+      if (notifySessionListeners) {
+        Object listeners[] = context.getApplicationEventListeners();
+        if (listeners != null && listeners.length > 0) {
+          HttpSessionEvent event = new HttpSessionEvent(getSession());
+
+          for (Object listener : listeners) {
+            if (!(listener instanceof HttpSessionIdListener))
+              continue;
+
+            HttpSessionIdListener idListener = (HttpSessionIdListener) listener;
+            try {
+              idListener.sessionIdChanged(event, oldId);
+            } catch (Throwable t) {
+              log.error(t.getMessage());
+            }
+          }
+        }
+      }
+    }
+
+  @Override
     public int getMaxInactiveInterval() {
         log.trace("EXEC getMaxInactiveInterval();");
 
@@ -719,7 +755,9 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
     public Enumeration<String> getAttributeNames() {
         log.trace("EXEC getAttributeNames();");
 
-        return new Enumerator<String>(getAttributesNames(), true);
+        Set<String> names = new HashSet<String>();
+        names.addAll(getAttributesNames());
+        return Collections.enumeration(names);
     }
 
     @Override
