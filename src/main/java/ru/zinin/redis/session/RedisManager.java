@@ -468,30 +468,14 @@ public class RedisManager extends ManagerBase implements Manager, PropertyChange
 
     @Override
     protected void stopInternal() throws LifecycleException {
-        log.trace("EXEC stopInternal();");
+        super.stopInternal();
 
         setState(LifecycleState.STOPPING);
-
-        this.sessionIdGenerator = null;
 
         if (!disableListeners) {
             eventListenerThread.stop();
         }
 
         pool.destroy();
-    }
-
-    protected String generateSessionId() {
-        String result;
-
-        try {
-            do {
-                result = sessionIdGenerator.generateSessionId();
-            } while (findSession(result) != null);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return result;
     }
 }
