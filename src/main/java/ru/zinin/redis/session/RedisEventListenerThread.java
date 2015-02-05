@@ -138,7 +138,7 @@ public class RedisEventListenerThread implements Runnable {
     }
 
     private void sessionCreatedEvent(RedisSessionCreatedEvent sessionCreatedEvent) {
-        Context context = (Context) manager.getContainer();
+        Context context = manager.getContext();
         Object listeners[] = context.getApplicationLifecycleListeners();
 
         if (listeners != null) {
@@ -164,14 +164,14 @@ public class RedisEventListenerThread implements Runnable {
                     } catch (Exception e) {
                         // Ignore
                     }
-                    manager.getContainer().getLogger().error(sm.getString("standardSession.sessionEvent"), t);
+                    manager.getContext().getLogger().error(sm.getString("standardSession.sessionEvent"), t);
                 }
             }
         }
     }
 
     private void sessionDestroyedEvent(RedisSessionDestroyedEvent sessionDestroyedEvent) {
-        Context context = (Context) manager.getContainer();
+        Context context = manager.getContext();
         Object listeners[] = context.getApplicationLifecycleListeners();
 
         if (listeners != null) {
@@ -199,14 +199,14 @@ public class RedisEventListenerThread implements Runnable {
                     } catch (Exception e) {
                         // Ignore
                     }
-                    manager.getContainer().getLogger().error(sm.getString("standardSession.sessionEvent"), t);
+                    manager.getContext().getLogger().error(sm.getString("standardSession.sessionEvent"), t);
                 }
             }
         }
     }
 
     private void sessionAttributeAddEvent(RedisSessionAddAttributeEvent sessionAddAttributeEvent) {
-        Context context = (Context) manager.getContainer();
+        Context context = manager.getContext();
         Object listeners[] = context.getApplicationEventListeners();
         if (listeners != null) {
             RedisHttpSession session = new RedisHttpSession(sessionAddAttributeEvent.getId(), manager);
@@ -230,14 +230,14 @@ public class RedisEventListenerThread implements Runnable {
                     } catch (Exception e) {
                         // Ignore
                     }
-                    manager.getContainer().getLogger().error(sm.getString("standardSession.attributeEvent"), t);
+                    manager.getContext().getLogger().error(sm.getString("standardSession.attributeEvent"), t);
                 }
             }
         }
     }
 
     private void sessionAttributeRemoveEvent(RedisSessionRemoveAttributeEvent sessionRemoveAttributeEvent) {
-        Context context = (Context) manager.getContainer();
+        Context context = manager.getContext();
         Object listeners[] = context.getApplicationEventListeners();
         if (listeners != null) {
             RedisHttpSession session = new RedisHttpSession(sessionRemoveAttributeEvent.getId(), manager);
@@ -261,14 +261,14 @@ public class RedisEventListenerThread implements Runnable {
                     } catch (Exception e) {
                         // Ignore
                     }
-                    manager.getContainer().getLogger().error(sm.getString("standardSession.attributeEvent"), t);
+                    manager.getContext().getLogger().error(sm.getString("standardSession.attributeEvent"), t);
                 }
             }
         }
     }
 
     private void sessionAttributeReplaceEvent(RedisSessionReplaceAttributeEvent sessionReplaceAttributeEvent) {
-        Context context = (Context) manager.getContainer();
+        Context context = manager.getContext();
         Object listeners[] = context.getApplicationEventListeners();
         if (listeners != null) {
             RedisHttpSession session = new RedisHttpSession(sessionReplaceAttributeEvent.getId(), manager);
@@ -292,7 +292,7 @@ public class RedisEventListenerThread implements Runnable {
                     } catch (Exception e) {
                         // Ignore
                     }
-                    manager.getContainer().getLogger().error(sm.getString("standardSession.attributeEvent"), t);
+                    manager.getContext().getLogger().error(sm.getString("standardSession.attributeEvent"), t);
                 }
             }
         }

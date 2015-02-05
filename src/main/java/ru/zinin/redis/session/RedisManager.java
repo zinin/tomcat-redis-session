@@ -17,10 +17,10 @@
 package ru.zinin.redis.session;
 
 import org.apache.catalina.*;
-import org.apache.catalina.mbeans.MBeanUtils;
 import org.apache.catalina.session.Constants;
-import org.apache.catalina.util.LifecycleMBeanBase;
-import org.apache.catalina.util.SessionIdGenerator;
+import org.apache.catalina.session.ManagerBase;
+import org.apache.catalina.util.SessionIdGeneratorBase;
+import org.apache.catalina.util.StandardSessionIdGenerator;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
@@ -44,13 +44,11 @@ import java.util.concurrent.Executors;
  *
  * @author Alexander V. Zinin (mail@zinin.ru)
  */
-public class RedisManager extends LifecycleMBeanBase implements Manager, PropertyChangeListener {
+public class RedisManager extends ManagerBase implements Manager, PropertyChangeListener {
     private final Log log = LogFactory.getLog(RedisManager.class);
 
     private static final String info = "RedisManager/1.0";
     private static final StringManager sm = StringManager.getManager(Constants.Package);
-
-    private Container container;
 
     private int maxInactiveInterval = 30 * 60;
     private int sessionIdLength = 32;
@@ -76,28 +74,8 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
     private final RedisEventListenerThread eventListenerThread = new RedisEventListenerThread(this);
 
     @Override
-    public Container getContainer() {
-        return container;
-    }
-
-    @Override
-    public void setContainer(Container container) {
-        log.trace(String.format("EXEC setContainer(%s);", container));
-
-        // De-register from the old Container (if any)
-        if ((this.container != null) && (this.container instanceof Context)) {
-            this.container.removePropertyChangeListener(this);
-        }
-
-        Container oldContainer = this.container;
-        this.container = container;
-        support.firePropertyChange("container", oldContainer, this.container);
-
-        // Register with the new Container (if any)
-        if ((this.container != null) && (this.container instanceof Context)) {
-            setMaxInactiveInterval(((Context) this.container).getSessionTimeout() * 60);
-            this.container.addPropertyChangeListener(this);
-        }
+    public String getName() {
+      return info;
     }
 
     @Override
@@ -114,45 +92,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         if (!distributable) {
             log.error("Only distributable web applications supported.");
         }
-    }
-
-    @Override
-    public String getInfo() {
-        log.trace("EXEC getInfo();");
-
-        return info;
-    }
-
-    @Override
-    public int getMaxInactiveInterval() {
-        log.trace("EXEC getMaxInactiveInterval();");
-
-        return maxInactiveInterval;
-    }
-
-    @Override
-    public void setMaxInactiveInterval(int interval) {
-        log.trace(String.format("EXEC setMaxInactiveInterval(%d);", interval));
-
-        int oldMaxInactiveInterval = this.maxInactiveInterval;
-        this.maxInactiveInterval = interval;
-        support.firePropertyChange("maxInactiveInterval", Integer.valueOf(oldMaxInactiveInterval), Integer.valueOf(this.maxInactiveInterval));
-    }
-
-    @Override
-    public int getSessionIdLength() {
-        log.trace("EXEC getSessionIdLength();");
-
-        return sessionIdLength;
-    }
-
-    @Override
-    public void setSessionIdLength(int idLength) {
-        log.trace(String.format("EXEC setSessionIdLength(%d);", idLength));
-
-        int oldSessionIdLength = this.sessionIdLength;
-        this.sessionIdLength = idLength;
-        support.firePropertyChange("sessionIdLength", Integer.valueOf(oldSessionIdLength), Integer.valueOf(this.sessionIdLength));
     }
 
     @Override
@@ -270,24 +209,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
     }
 
     @Override
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        log.trace(String.format("EXEC addPropertyChangeListener(%s);", listener));
-
-        support.addPropertyChangeListener(listener);
-    }
-
-    @Override
-    public void changeSessionId(Session session) {
-        log.trace(String.format("EXEC changeSessionId(%s);", session));
-
-        String oldId = session.getIdInternal();
-        session.setId(generateSessionId(), false);
-        String newId = session.getIdInternal();
-
-        container.fireContainerEvent(Context.CHANGE_SESSION_ID_EVENT, new String[]{oldId, newId});
-    }
-
-    @Override
     public Session createEmptySession() {
         log.trace("EXEC createEmptySession();");
 
@@ -383,13 +304,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
     }
 
     @Override
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        log.trace(String.format("EXEC removePropertyChangeListener(%s);", listener));
-
-        support.removePropertyChangeListener(listener);
-    }
-
-    @Override
     public void unload() throws IOException {
         log.trace("EXEC unload();");
     }
@@ -435,39 +349,6 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
                 session.expire();
             }
         }
-    }
-
-    @Override
-    protected String getDomainInternal() {
-        log.trace("EXEC getDomainInternal();");
-
-        return MBeanUtils.getDomain(container);
-    }
-
-    @Override
-    protected String getObjectNameKeyProperties() {
-        log.trace("EXEC getObjectNameKeyProperties();");
-
-        StringBuilder name = new StringBuilder("type=Manager");
-
-        if (container instanceof Context) {
-            name.append(",context=");
-            String contextName = container.getName();
-            if (!contextName.startsWith("/")) {
-                name.append('/');
-            }
-            name.append(contextName);
-
-            Context context = (Context) container;
-            name.append(",host=");
-            name.append(context.getParent().getName());
-        } else {
-            // Unlikely / impossible? Handle it to be safe
-            name.append(",container=");
-            name.append(container.getName());
-        }
-
-        return name.toString();
     }
 
     public String getJedisJndiName() {
@@ -526,12 +407,32 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
     protected void startInternal() throws LifecycleException {
         log.trace("EXEC startInternal();");
 
-        sessionIdGenerator = new SessionIdGenerator();
+        // Ensure caches for timing stats are the right size by filling with
+        // nulls.
+        while (sessionCreationTiming.size() < TIMING_STATS_CACHE_SIZE) {
+            sessionCreationTiming.add(null);
+        }
+        while (sessionExpirationTiming.size() < TIMING_STATS_CACHE_SIZE) {
+            sessionExpirationTiming.add(null);
+        }
+
+          /* Create sessionIdGenerator if not explicitly configured */
+        SessionIdGenerator sessionIdGenerator = getSessionIdGenerator();
+        if (sessionIdGenerator == null) {
+            sessionIdGenerator = new StandardSessionIdGenerator();
+            setSessionIdGenerator(sessionIdGenerator);
+        }
+
+        if (sessionIdLength != SESSION_ID_LENGTH_UNSET) {
+            sessionIdGenerator.setSessionIdLength(sessionIdLength);
+        }
         sessionIdGenerator.setJvmRoute(getJvmRoute());
-        sessionIdGenerator.setSecureRandomAlgorithm(getSecureRandomAlgorithm());
-        sessionIdGenerator.setSecureRandomClass(getSecureRandomClass());
-        sessionIdGenerator.setSecureRandomProvider(getSecureRandomProvider());
-        sessionIdGenerator.setSessionIdLength(getSessionIdLength());
+        if (sessionIdGenerator instanceof SessionIdGeneratorBase) {
+            SessionIdGeneratorBase sig = (SessionIdGeneratorBase) sessionIdGenerator;
+            sig.setSecureRandomAlgorithm(getSecureRandomAlgorithm());
+            sig.setSecureRandomClass(getSecureRandomClass());
+            sig.setSecureRandomProvider(getSecureRandomProvider());
+        }
 
         // Force initialization of the random number generator
         if (log.isDebugEnabled()) {
@@ -565,90 +466,16 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         setState(LifecycleState.STARTING);
     }
 
-    public Engine getEngine() {
-        Engine e = null;
-        for (Container c = getContainer(); e == null && c != null; c = c.getParent()) {
-            if (c instanceof Engine) {
-                e = (Engine) c;
-            }
-        }
-        return e;
-    }
-
-    public String getJvmRoute() {
-        Engine e = getEngine();
-        return e == null ? null : e.getJvmRoute();
-    }
-
-    public String getSecureRandomClass() {
-        return this.secureRandomClass;
-    }
-
-    public void setSecureRandomClass(String secureRandomClass) {
-        String oldSecureRandomClass = this.secureRandomClass;
-        this.secureRandomClass = secureRandomClass;
-        support.firePropertyChange("secureRandomClass", oldSecureRandomClass, this.secureRandomClass);
-    }
-
-    public String getSecureRandomAlgorithm() {
-        return secureRandomAlgorithm;
-    }
-
-    public void setSecureRandomAlgorithm(String secureRandomAlgorithm) {
-        this.secureRandomAlgorithm = secureRandomAlgorithm;
-    }
-
-    public String getSecureRandomProvider() {
-        return secureRandomProvider;
-    }
-
-    public void setSecureRandomProvider(String secureRandomProvider) {
-        this.secureRandomProvider = secureRandomProvider;
-    }
-
     @Override
     protected void stopInternal() throws LifecycleException {
-        log.trace("EXEC stopInternal();");
+        super.stopInternal();
 
         setState(LifecycleState.STOPPING);
-
-        this.sessionIdGenerator = null;
 
         if (!disableListeners) {
             eventListenerThread.stop();
         }
 
         pool.destroy();
-    }
-
-    protected String generateSessionId() {
-        String result;
-
-        try {
-            do {
-                result = sessionIdGenerator.generateSessionId();
-            } while (findSession(result) != null);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return result;
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-        log.trace(String.format("EXEC propertyChange(%s);", event));
-
-        if (!(event.getSource() instanceof Context)) {
-            return;
-        }
-
-        if (event.getPropertyName().equals("sessionTimeout")) {
-            try {
-                setMaxInactiveInterval((Integer) event.getNewValue() * 60);
-            } catch (NumberFormatException e) {
-                log.error(sm.getString("managerBase.sessionTimeout", event.getNewValue()));
-            }
-        }
     }
 }
