@@ -163,7 +163,7 @@
                 </executions>
             </plugin>
 
-            <!-- Deploy to maven central - https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide -->
+            <!-- Deploy to maven central - http://central.sonatype.org/pages/ossrh-guide.html -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
