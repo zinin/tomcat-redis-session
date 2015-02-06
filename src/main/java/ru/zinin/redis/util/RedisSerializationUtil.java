@@ -37,10 +37,18 @@ public class RedisSerializationUtil {
 
     @SuppressWarnings({"unchecked", "ThrowFromFinallyBlock"})
     public static <T extends Serializable> T decode(byte[] bytes) {
+       return decode(bytes, null);
+    }
+
+    @SuppressWarnings({"unchecked", "ThrowFromFinallyBlock"})
+    public static <T extends Serializable> T decode(byte[] bytes, ClassLoader classLoader) {
+        if (classLoader == null) {
+            classLoader = Thread.currentThread().getContextClassLoader();
+        }
         T t = null;
         Exception thrown = null;
         try {
-            CustomObjectInputStream oin = new CustomObjectInputStream(new ByteArrayInputStream(bytes), Thread.currentThread().getContextClassLoader());
+            CustomObjectInputStream oin = new CustomObjectInputStream(new ByteArrayInputStream(bytes), classLoader);
             t = (T) oin.readObject();
         } catch (IOException e) {
             e.printStackTrace();

@@ -54,7 +54,7 @@ public class RedisEventListenerThread implements Runnable {
         public void onMessage(String channel, String message) {
             byte[] bytes = Base64Util.decode(message);
 
-            RedisSessionEvent event = RedisSerializationUtil.decode(bytes);
+            RedisSessionEvent event = RedisSerializationUtil.decode(bytes, manager.getContainerClassLoader());
 
             log.debug("Event from " + channel + ": " + event);
 
@@ -106,8 +106,9 @@ public class RedisEventListenerThread implements Runnable {
         while (!stopFlag.get()) {
             Jedis jedis = manager.getPool().getResource();
             try {
-                log.debug("Subscribed to " + RedisSessionKeys.getSessionChannel());
-                jedis.subscribe(pubSub, RedisSessionKeys.getSessionChannel());
+                String sessionChannel = RedisSessionKeys.getSessionChannel(manager);
+                log.debug("Subscribed to " + sessionChannel);
+                jedis.subscribe(pubSub, sessionChannel);
                 log.debug("Done.");
 
                 manager.getPool().returnResource(jedis);

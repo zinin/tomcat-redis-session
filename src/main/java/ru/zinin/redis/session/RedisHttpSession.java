@@ -137,7 +137,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
                 byte[] bytes = RedisSerializationUtil.encode(redisSessionEvent);
                 String message = new String(Base64Util.encode(bytes));
 
-                jedis.publish(RedisSessionKeys.getSessionChannel(), message);
+                jedis.publish(RedisSessionKeys.getSessionChannel(manager), message);
 
                 log.debug("Sended " + redisSessionEvent.toString());
 
@@ -556,7 +556,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
                 byte[] bytes = RedisSerializationUtil.encode(redisSessionEvent);
                 String message = new String(Base64Util.encode(bytes));
 
-                transaction.publish(RedisSessionKeys.getSessionChannel(), message);
+                transaction.publish(RedisSessionKeys.getSessionChannel(manager), message);
             }
 
             transaction.exec();
@@ -796,7 +796,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
                 bytes = RedisSerializationUtil.encode(sessionEvent);
                 String message = new String(Base64Util.encode(bytes));
 
-                jedis.publish(RedisSessionKeys.getSessionChannel(), message);
+                jedis.publish(RedisSessionKeys.getSessionChannel(manager), message);
 
                 log.debug("Sended " + sessionEvent.toString());
 
@@ -867,7 +867,7 @@ public class RedisHttpSession implements HttpSession, Session, Serializable {
             transaction.srem(attrsListKey, name);
 
             if (!disableListeners) {
-                transaction.publish(RedisSessionKeys.getSessionChannel(), message);
+                transaction.publish(RedisSessionKeys.getSessionChannel(manager), message);
             }
 
             transaction.exec();
