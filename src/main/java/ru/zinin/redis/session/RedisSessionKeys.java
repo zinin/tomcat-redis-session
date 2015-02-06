@@ -68,8 +68,8 @@ public class RedisSessionKeys {
         return SESSION_KEY_PREFIX + KEY_DELIM + id + KEY_DELIM + SESSION_ATTR_KEY + KEY_DELIM + name;
     }
 
-    public static String getSessionChannel() {
-        return SESSION_CHANNEL;
+    public static String getSessionChannel(RedisManager manager) {
+        return SESSION_CHANNEL + KEY_DELIM + manager.getContainer().getName();
     }
 
     public static String getEncoding() {

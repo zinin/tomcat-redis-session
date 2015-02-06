@@ -635,6 +635,18 @@ public class RedisManager extends LifecycleMBeanBase implements Manager, Propert
         return result;
     }
 
+    protected ClassLoader getContainerClassLoader() {
+        if (container instanceof Context) {
+            Context containerContext = (Context)container;
+            Loader contextLoader = containerContext.getLoader();
+            if (contextLoader == null) {
+                return null;
+            }
+            return contextLoader.getClassLoader();
+        }
+        return null;
+    }
+
     @Override
     public void propertyChange(PropertyChangeEvent event) {
         log.trace(String.format("EXEC propertyChange(%s);", event));
